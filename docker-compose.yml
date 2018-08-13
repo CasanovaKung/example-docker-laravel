@@ -1,0 +1,74 @@
+version: '2'
+
+services:
+  php:
+    build:
+      context: ./etc/phpfpm
+    container_name: php
+    environment:
+      - TZ=${TIMEZONE}
+    networks:
+      - php-app
+    ports:
+      - 9000
+    restart: always
+    volumes:
+      - ${WEBDIR}:${WORKDIR}
+      - ./.composer/cache:/root/.composer/cache
+    working_dir: ${WORKDIR}
+  nginx:
+    build:
+      context: ./etc/nginx
+      args:
+        WORKDIR: ${WORKDIR}
+    container_name: nginx
+    links:
+      - php:php
+      - mysql:mysql
+    networks:
+      - php-app
+    ports:
+      - ${WEBPORT}:80
+    restart: always
+    volumes:
+      - ${WEBDIR}:${WORKDIR}
+      - ./etc/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./etc/nginx/conf.d/default.conf:/etc/nginx/conf.d/default.conf
+    working_dir: ${WORKDIR}
+  mysql:
+    build:
+      context: ./etc/mysql
+    container_name: mysql
+    environment:
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_ROOT_HOST=${MYSQL_ROOT_HOST}
+      - TZ=${TIMEZONE}
+    networks:
+      - php-app
+    ports:
+      - 3306
+    restart: always
+    volumes:
+      - ${DATABASEDIR}:/var/lib/mysql
+  phpmyadmin:
+    container_name: phpmyadmin
+    environment:
+      - PMA_ARBITRARY=1
+      - PMA_HOST=mysql
+      - PMA_PORT=3306
+    image: phpmyadmin/phpmyadmin:4.8.2
+    links:
+      - mysql:mysql
+    networks:
+      - php-app
+    ports:
+      - ${PHPMYADMIN}:80
+    restart: always
+
+volumes:
+  php-src:
+networks:
+  php-app:
