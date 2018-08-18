@@ -28,6 +28,9 @@ RUN set -x \
   && echo -n
 
 ADD ./zz-overrides.ini /usr/local/etc/php/conf.d/zz-overrides.ini
+RUN set -x \
+  && mkdir /var/www/.composer \
+  && chown -R www-data /var/www/.composer
 
 RUN usermod -u 1000 www-data
 
